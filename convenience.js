@@ -16,3 +16,34 @@ export function GenerateCode() {
 
     return code;
 }
+
+export function StringToBoard(str, dim) {
+    if (dim == 3) {
+        var l = Math.cbrt(str.length);
+        var b = [];
+        for (var i = 0; i < l; i++) {
+            b.push([]);
+            for (var j = 0; j < l; j++) {
+                b[i].push([]);
+                for (var k = 0; k < l; k++) {
+                    b[i][j].push((str[k + (j * l) + (i * l * l)]));
+                }
+            }
+        }
+        return b;
+    }
+}
+
+export function BoardToString(board, dim) {
+    if (dim == 3) {
+        var s = "";
+        for (var i = 0; i < board.length; i++) {
+            for (var j = 0; j < board.length; j++) {
+                for (var k = 0; k < board.length; k++) {
+                    s = s + board[i][j][k];
+                }
+            }
+        }
+        return s;
+    }
+}

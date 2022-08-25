@@ -98,9 +98,12 @@ function sia() {
     });
 }
 
-import { box, letters, GenerateCode } from "./convenience.js"
+import { box, letters, GenerateCode, StringToBoard, BoardToString } from "./convenience.js"
+import { loadBoard } from "./board.js"
 
 var screen = 0;
+var t0 = 0;
+var t1 = 0;
 
 var playerID;
 var playerRef
@@ -110,9 +113,12 @@ var gameID;
 var gameRef;
 var allGames;
 
+var zDim;
+
 var localGame;
 
 function main() {
+    t0++;
     switch (screen) {
         // main menu
         case 0: {
@@ -199,6 +205,10 @@ function main() {
                             gameCode: code,
                             gameTurn: playerID,
                             gameState: "Joinable",
+                            gameBoard: "",
+                            gameSettings: {
+                                settingDimension: 3
+                            },
                             gamePlayers: {}
                         });
 
@@ -214,7 +224,9 @@ function main() {
 
                     // callback will occur whenever player ref changes
                     onValue(gameRef, (snapshot) => {
-                        localGame = snapshot.val();
+                        if(snapshot.exists) {
+                            localGame = snapshot.val();
+                        }
                     });
 
                     // callback will occur whenever (relative to the client) a new player joins
@@ -323,13 +335,24 @@ function main() {
             ctx.fillText("Start Game", 175, 530);
             if (box(mX, mY, 160, 480, 256, 80) && mouseDown) {
                 console.log(localGame["gameCode"]);
+
+                if (localGame["gameSettings"]["settingDimension"] == 3) {
+                    localGame["gameBoard"] = loadBoard(3, 0);
+                }
+
                 set(gameRef, {
                     gameId: localGame["gameId"],
                     gameCode: localGame["gameCode"],
                     gameTurn: localGame["gameTurn"],
                     gameState: "Ingame",
+                    gameBoard: BoardToString(localGame["gameBoard"], 3),
+                    gameSettings: {
+                        settingDimension: localGame["gameSettings"]["settingDimension"]
+                    },
                     gamePlayers: localGame["gamePlayers"]
                 });
+
+                zDim = 7;
 
                 screen = 1;
             }
@@ -359,10 +382,73 @@ function main() {
 
         // game
         case 1: {
+            t1++;
+
+            if (Object.prototype.toString.call(localGame["gameBoard"]) === "[object String]") {
+                localGame["gameBoard"] = StringToBoard(localGame["gameBoard"], 3);
+            }
+
             // background
             ctx.beginPath();
             ctx.fillStyle = "#888888";
             ctx.fillRect(0, 0, 600, 600);
+
+            ctx.beginPath();
+            for (var i = 0; i < 15; i++) {
+                for (var j = 0; j < 15; j++) {
+                    switch (localGame["gameBoard"][zDim][j][i]) {
+                        // blank tile
+                        case '0': {
+                            ctx.fillStyle = "#e9e1ce";
+                            break;
+                        }
+                        // double letter score
+                        case '1': {
+                            ctx.fillStyle = "#8888ff";
+                            break;
+                        }
+                        // triple letter score
+                        case '2': {
+                            ctx.fillStyle = "#0000ff";
+                            break;
+                        }
+                        // double word score
+                        case '3': {
+                            ctx.fillStyle = "#ff00ff";
+                            break;
+                        }
+                        // triple word score
+                        case '4': {
+                            ctx.fillStyle = "#ff8800";
+                            break;
+                        }
+                        // star
+                        case '5': {
+                            ctx.fillStyle = "#000000";
+                            break;
+                        }
+                        default: {
+                            break;
+                        }
+                    }
+                    ctx.fillRect(51 + (i * 33), 51 + (j * 33), 30, 30);
+                }
+            }
+            
+            if (keys[87] && t1 > 20) {
+                zDim++;
+                t1 = 0;
+                if (zDim > 14) {
+                    zDim = 0;
+                }
+            }
+            if (keys[83] && t1 > 20) {
+                zDim--;
+                t1 = 0;
+                if (zDim < 0) {
+                    zDim = 14;
+                }
+            }
 
             break;
         }
